@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { NotificationSettings } from '../types/settings';
 
 interface SettingsProps {
@@ -6,8 +6,13 @@ interface SettingsProps {
     onSave: (settings: NotificationSettings) => void;
 }
 
-export const Settings: React.FC<SettingsProps> = ({ settings, onSave }) => {
+const Settings: React.FC<SettingsProps> = ({ settings, onSave }) => {
     const [formData, setFormData] = useState<NotificationSettings>(settings);
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        onSave(formData);
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value, type, checked } = e.target;
@@ -17,136 +22,101 @@ export const Settings: React.FC<SettingsProps> = ({ settings, onSave }) => {
         }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        onSave(formData);
-    };
-
     return (
-        <div className="p-4">
-            <h2 className="text-2xl font-bold mb-4">הגדרות התראות</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                    <h3 className="text-xl font-semibold">הגדרות כלליות</h3>
-                        <div>
-                        <label className="block">
-                            <span className="text-gray-700">כתובת אימייל</span>
-                            <input
-                                type="email"
-                                name="email"
-                                value={formData.email || ''}
-                                onChange={handleChange}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                            />
-                        </label>
-                        </div>
-                        <div>
-                        <label className="block">
-                            <span className="text-gray-700">מספר טלפון</span>
-                            <input
-                                type="tel"
-                                name="phone"
-                                value={formData.phone || ''}
-                                onChange={handleChange}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                            />
-                                </label>
-                            </div>
-                        </div>
-
-                <div className="space-y-2">
-                    <h3 className="text-xl font-semibold">הגדרות SendGrid</h3>
-                            <div>
-                        <label className="block">
-                            <span className="text-gray-700">SendGrid API Key</span>
+        <div className="container mx-auto px-4 py-8">
+            <h1 className="text-3xl font-bold mb-8 text-right">הגדרות</h1>
+            
+            <div className="bg-white rounded-lg shadow p-6">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="space-y-4">
+                        <h2 className="text-xl font-semibold mb-4 text-right">הגדרות התראות</h2>
+                        
+                        {/* Email Settings */}
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-end gap-2">
                                 <input
-                                    type="password"
-                                name="sendgridApiKey"
-                                value={formData.sendgridApiKey || ''}
-                                onChange={handleChange}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                            />
+                                    type="checkbox"
+                                    id="enableEmailNotifications"
+                                    name="enableEmailNotifications"
+                                    checked={formData.enableEmailNotifications}
+                                    onChange={handleChange}
+                                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                />
+                                <label htmlFor="enableEmailNotifications" className="text-sm font-medium text-gray-700">
+                                    אפשר התראות במייל
                                 </label>
                             </div>
+                            
+                            {formData.enableEmailNotifications && (
+                                <div className="space-y-2">
+                                    <div>
+                                        <label htmlFor="email" className="block text-sm font-medium text-gray-700 text-right">
+                                            כתובת מייל
+                                        </label>
+                                        <input
+                                            type="email"
+                                            id="email"
+                                            name="email"
+                                            value={formData.email}
+                                            onChange={handleChange}
+                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-right"
+                                            dir="rtl"
+                                        />
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
-                <div className="space-y-2">
-                    <h3 className="text-xl font-semibold">הגדרות Twilio</h3>
-                                <div>
-                        <label className="block">
-                            <span className="text-gray-700">Twilio Account SID</span>
-                                    <input
-                                        type="password"
-                                name="twilioAccountSid"
-                                value={formData.twilioAccountSid || ''}
-                                onChange={handleChange}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                            />
-                        </label>
-                                </div>
-                                <div>
-                        <label className="block">
-                            <span className="text-gray-700">Twilio Auth Token</span>
-                                    <input
-                                        type="password"
-                                name="twilioAuthToken"
-                                value={formData.twilioAuthToken || ''}
-                                onChange={handleChange}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                            />
-                        </label>
-                                </div>
-                                <div>
-                        <label className="block">
-                            <span className="text-gray-700">Twilio From Number</span>
-                                    <input
-                                type="text"
-                                name="twilioFromNumber"
-                                value={formData.twilioFromNumber || ''}
-                                onChange={handleChange}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                            />
-                        </label>
-                                </div>
+                        {/* SMS Settings */}
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-end gap-2">
+                                <input
+                                    type="checkbox"
+                                    id="enableSMSNotifications"
+                                    name="enableSMSNotifications"
+                                    checked={formData.enableSMSNotifications}
+                                    onChange={handleChange}
+                                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                />
+                                <label htmlFor="enableSMSNotifications" className="text-sm font-medium text-gray-700">
+                                    אפשר התראות SMS
+                                </label>
                             </div>
-
-                <div className="space-y-2">
-                    <h3 className="text-xl font-semibold">העדפות התראות</h3>
-                        <div>
-                                <label className="flex items-center">
-                                    <input
-                                        type="checkbox"
-                                name="enableEmailNotifications"
-                                checked={formData.enableEmailNotifications}
-                                onChange={handleChange}
-                                className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                            />
-                            <span className="mr-2">אפשר התראות במייל</span>
-                                </label>
+                            
+                            {formData.enableSMSNotifications && (
+                                <div className="space-y-2">
+                                    <div>
+                                        <label htmlFor="phone" className="block text-sm font-medium text-gray-700 text-right">
+                                            מספר טלפון
+                                        </label>
+                                        <input
+                                            type="tel"
+                                            id="phone"
+                                            name="phone"
+                                            value={formData.phone}
+                                            onChange={handleChange}
+                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-right"
+                                            dir="rtl"
+                                            placeholder="972501234567"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
-                    <div>
-                                <label className="flex items-center">
-                                    <input
-                                        type="checkbox"
-                                name="enableSMSNotifications"
-                                checked={formData.enableSMSNotifications}
-                                onChange={handleChange}
-                                className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                            />
-                            <span className="mr-2">אפשר התראות SMS</span>
-                                </label>
-                    </div>
-                </div>
 
-                <div className="pt-4">
-                    <button
-                        type="submit"
-                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                    >
-                        שמור הגדרות
-                    </button>
-                </div>
-            </form>
+                    <div className="flex justify-end">
+                        <button
+                            type="submit"
+                            className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        >
+                            שמור הגדרות
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     );
 };
+
+export default Settings;

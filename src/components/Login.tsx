@@ -1,22 +1,38 @@
 import React, { useState } from 'react';
-import { LoginCredentials } from '../types/user';
+import { supabase } from '../lib/supabase';
 
 interface LoginProps {
-    onLogin: (credentials: LoginCredentials) => boolean;
+    onLogin: (session: any) => void;
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
-        
-        const success = onLogin({ email, password });
-        if (!success) {
-            setError('שם משתמש או סיסמה שגויים');
+        setLoading(true);
+
+        try {
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email,
+                password
+            });
+
+            if (error) {
+                throw error;
+            }
+
+            if (data?.session) {
+                onLogin(data.session);
+            }
+        } catch (err: any) {
+            setError(err.message || 'שגיאה בהתחברות');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -42,6 +58,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                             required
                             dir="rtl"
                             placeholder="הכנס אימייל"
+                            disabled={loading}
                         />
                     </div>
                     <div>
@@ -56,18 +73,19 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                             required
                             dir="rtl"
                             placeholder="הכנס סיסמה"
+                            disabled={loading}
                         />
                     </div>
                     <button
                         type="submit"
-                        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+                            loading ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'
+                        } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+                        disabled={loading}
                     >
-                        התחבר
+                        {loading ? 'מתחבר...' : 'התחבר'}
                     </button>
                 </form>
-                <div className="mt-4 text-sm text-gray-600 text-center">
-                    * משתמש ברירת מחדל: admin@example.com / admin123
-                </div>
             </div>
         </div>
     );

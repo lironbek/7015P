@@ -3,11 +3,6 @@ export interface NotificationSettings {
     phone: string;
     enableEmailNotifications: boolean;
     enableSMSNotifications: boolean;
-    notifyDaysBefore: number[];
-    sendgridApiKey?: string;
-    twilioAccountSid?: string;
-    twilioAuthToken?: string;
-    twilioFromNumber?: string;
 }
 
 export interface Settings {
