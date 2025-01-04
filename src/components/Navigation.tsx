@@ -12,17 +12,17 @@ const Navigation: React.FC<NavigationProps> = ({ session }) => {
     const location = useLocation();
     const [userRole, setUserRole] = useState<string>('user');
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const loadUserRole = async () => {
             if (!session?.user?.id) {
-                console.error('No user session found');
+                setError('No user session found');
                 setIsLoading(false);
                 return;
             }
 
             try {
-                setIsLoading(true);
                 const { data: userData, error } = await supabase
                     .from('users')
                     .select('role')
@@ -46,20 +46,21 @@ const Navigation: React.FC<NavigationProps> = ({ session }) => {
                             ]);
 
                         if (insertError) {
-                            console.error('Error creating user:', insertError);
+                            setError('Error creating user');
                             setUserRole('user');
                         } else {
                             setUserRole(isAdmin ? 'admin' : 'user');
                         }
                     } else {
-                        console.error('Error loading user role:', error);
+                        setError('Error loading user role');
                         setUserRole('user');
                     }
                 } else if (userData) {
                     setUserRole(userData.role);
+                    setError(null);
                 }
             } catch (err) {
-                console.error('Error:', err);
+                setError('Unexpected error occurred');
                 setUserRole('user');
             } finally {
                 setIsLoading(false);
@@ -78,19 +79,25 @@ const Navigation: React.FC<NavigationProps> = ({ session }) => {
     };
 
     const menuItems = [
-        { path: '/dashboard', label: 'דשבורד', icon: LayoutDashboard, roles: ['user', 'admin'] },
-        { path: '/users', label: 'ניהול משתמשים', icon: Users, roles: ['admin'] },
-        { path: '/platoons', label: 'ניהול פלוגות', icon: Building2, roles: ['admin'] },
-        { path: '/vehicles', label: 'ניהול רכבים', icon: Car, roles: ['admin'] },
-        { path: '/vehicle-types', label: 'ניהול סוגי רכב', icon: Wrench, roles: ['admin'] },
-        { path: '/maintenance-calendar', label: 'יומן טיפולים', icon: Calendar, roles: ['user', 'admin'] },
-        { path: '/settings', label: 'הגדרות מערכת', icon: Settings, roles: ['user', 'admin'] }
+        { path: 'dashboard', label: 'דשבורד', icon: LayoutDashboard, roles: ['user', 'admin'] },
+        { path: 'users', label: 'ניהול משתמשים', icon: Users, roles: ['admin'] },
+        { path: 'platoons', label: 'ניהול פלוגות', icon: Building2, roles: ['admin'] },
+        { path: 'vehicles', label: 'ניהול רכבים', icon: Car, roles: ['admin'] },
+        { path: 'vehicle-types', label: 'ניהול סוגי רכב', icon: Wrench, roles: ['admin'] },
+        { path: 'maintenance-calendar', label: 'יומן טיפולים', icon: Calendar, roles: ['user', 'admin'] },
+        { path: 'settings', label: 'הגדרות מערכת', icon: Settings, roles: ['user', 'admin'] }
     ];
 
     if (isLoading) {
-        return <div className="fixed top-0 right-0 h-screen w-64 bg-gray-900 text-white shadow-xl p-6">
-            <div>טוען...</div>
-        </div>;
+        return (
+            <div className="fixed top-0 right-0 h-screen w-64 bg-gray-900 text-white shadow-xl p-6">
+                <div>טוען...</div>
+            </div>
+        );
+    }
+
+    if (error) {
+        console.error('Navigation error:', error);
     }
 
     const filteredMenuItems = menuItems.filter(item => item.roles.includes(userRole));
@@ -108,13 +115,12 @@ const Navigation: React.FC<NavigationProps> = ({ session }) => {
                     <ul className="space-y-2">
                         {filteredMenuItems.map((item) => {
                             const Icon = item.icon;
-                            const path = item.path.replace('/', '');
                             return (
-                                <li key={path}>
+                                <li key={item.path}>
                                     <Link
-                                        to={path}
+                                        to={`/${item.path}`}
                                         className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors duration-200 ${
-                                            location.pathname === path
+                                            location.pathname === `/${item.path}`
                                                 ? 'bg-indigo-600 text-white'
                                                 : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                                         }`}

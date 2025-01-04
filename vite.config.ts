@@ -7,7 +7,6 @@ export default defineConfig({
   base: '/7015P/',
   build: {
     outDir: 'dist',
-    assetsDir: 'assets',
     sourcemap: true
   }
 });
