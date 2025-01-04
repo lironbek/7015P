@@ -130,9 +130,9 @@ function App() {
                 {!session ? (
                     <Login onLogin={handleLogin} />
                 ) : (
-                    <div className="min-h-screen bg-gray-100">
+                    <div className="min-h-screen bg-gray-100" style={{ direction: 'rtl' }}>
                         <Navigation session={session} />
-                        <main className="mr-64 min-h-screen p-8">
+                        <main className="mr-64 min-h-screen p-8 bg-gray-50">
                             <div className="max-w-7xl mx-auto">
                                 <Routes>
                                     <Route path="/dashboard" element={<Dashboard session={session} />} />
