@@ -125,7 +125,7 @@ function App() {
     };
 
     return (
-        <Router>
+        <Router basename="/7015P">
             <div className="App min-h-screen bg-gray-100">
                 {!session ? (
                     <Login onLogin={handleLogin} />
