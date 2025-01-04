@@ -15,9 +15,10 @@ const Navigation: React.FC<NavigationProps> = ({ session }) => {
     useEffect(() => {
         const loadUserRole = async () => {
             try {
+                console.log('Loading user role for:', session.user.id);
                 const { data: userData, error } = await supabase
                     .from('users')
-                    .select('role')
+                    .select('*')
                     .eq('id', session.user.id)
                     .single();
 
@@ -26,8 +27,29 @@ const Navigation: React.FC<NavigationProps> = ({ session }) => {
                     return;
                 }
 
+                console.log('User data:', userData);
                 if (userData) {
                     setUserRole(userData.role);
+                } else {
+                    // אם המשתמש לא נמצא בטבלת users, ניצור אותו
+                    const { error: insertError } = await supabase
+                        .from('users')
+                        .insert([
+                            {
+                                id: session.user.id,
+                                email: session.user.email,
+                                role: session.user.email === 'lironbek88@gmail.com' ? 'admin' : 'user',
+                                first_name: '',
+                                last_name: ''
+                            }
+                        ]);
+
+                    if (insertError) {
+                        console.error('Error creating user:', insertError);
+                        return;
+                    }
+
+                    setUserRole(session.user.email === 'lironbek88@gmail.com' ? 'admin' : 'user');
                 }
             } catch (err) {
                 console.error('Error:', err);
