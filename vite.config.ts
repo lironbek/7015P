@@ -3,17 +3,11 @@ import react from '@vitejs/plugin-react';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: '/7015P/',
   plugins: [react()],
-  optimizeDeps: {
-    exclude: ['lucide-react'],
-  },
-  server: {
-    proxy: {
-      '/api': {
-        target: 'http://localhost:5000',
-        changeOrigin: true
-      }
-    }
+  base: '/7015P/',
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    sourcemap: true
   }
 });

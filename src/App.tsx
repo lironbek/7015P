@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import Settings from './components/Settings';
@@ -175,7 +175,7 @@ function App() {
     };
 
     return (
-        <Router basename="">
+        <Router>
             <div className="App min-h-screen bg-gray-100">
                 {!session ? (
                     <Login onLogin={handleLogin} />
