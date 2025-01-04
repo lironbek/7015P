@@ -1,10 +1,6 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Vehicle } from '../types/vehicle';
 import { Platoon } from '../types/platoon';
-import Calendar from 'react-calendar';
-import 'react-calendar/dist/Calendar.css';
-
-type Value = Date | null;
 
 interface MaintenanceCalendarProps {
     vehicles: Vehicle[];
@@ -12,69 +8,76 @@ interface MaintenanceCalendarProps {
 }
 
 const MaintenanceCalendar: React.FC<MaintenanceCalendarProps> = ({ vehicles, platoons }) => {
-    // מיפוי תאריכי טיפול לפי יום
-    const maintenanceDates = useMemo(() => {
-        const dates = new Map<string, Vehicle[]>();
-        vehicles.forEach(vehicle => {
-            const date = vehicle.maintenanceDate.split('T')[0];
-            if (!dates.has(date)) {
-                dates.set(date, []);
-            }
-            dates.get(date)?.push(vehicle);
-        });
-        return dates;
-    }, [vehicles]);
-
-    const getPlatoonName = (platoonId: string) => {
-        return platoons.find(p => p.id === platoonId)?.name || '-';
+    const getPlatoonName = (platoonId?: string) => {
+        if (!platoonId) return '-';
+        const platoon = platoons.find(p => p.id === platoonId);
+        return platoon ? platoon.name : '-';
     };
 
-    // עיצוב תאריכים עם טיפולים
-    const tileContent = ({ date, view }: { date: Date; view: string }) => {
-        if (view !== 'month') return null;
-
-        const dateStr = date.toISOString().split('T')[0];
-        const vehiclesForDate = maintenanceDates.get(dateStr);
-
-        if (!vehiclesForDate?.length) return null;
-
-        return (
-            <div className="text-xs mt-1">
-                <div className="bg-blue-100 text-blue-800 rounded-full px-1">
-                    {vehiclesForDate.length} טיפולים
-                </div>
-            </div>
-        );
+    const getNextMaintenanceDate = (vehicle: Vehicle) => {
+        if (!vehicle.maintenanceDate) return '-';
+        const date = new Date(vehicle.maintenanceDate);
+        return date.toLocaleDateString('he-IL');
     };
 
-    // הצגת פרטי טיפולים ליום שנבחר
-    const handleDateClick = (value: Value) => {
-        if (!value || !(value instanceof Date)) return;
-        
-        const dateStr = value.toISOString().split('T')[0];
-        const vehiclesForDate = maintenanceDates.get(dateStr);
+    const getDaysUntilMaintenance = (vehicle: Vehicle) => {
+        if (!vehicle.maintenanceDate) return '-';
+        const today = new Date();
+        const maintenanceDate = new Date(vehicle.maintenanceDate);
+        const diffTime = maintenanceDate.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays;
+    };
 
-        if (vehiclesForDate?.length) {
-            alert(`טיפולים ליום ${dateStr}:\n\n${
-                vehiclesForDate.map(v => 
-                    `${v.vehicleNumber} - ${getPlatoonName(v.platoonId)}`
-                ).join('\n')
-            }`);
-        }
+    const getMaintenanceStatus = (vehicle: Vehicle) => {
+        const days = getDaysUntilMaintenance(vehicle);
+        if (days === '-') return { text: 'לא נקבע', color: 'gray' };
+        if (days < 0) return { text: 'באיחור', color: 'red' };
+        if (days <= 7) return { text: 'השבוע', color: 'yellow' };
+        return { text: 'בזמן', color: 'green' };
     };
 
     return (
-        <div className="space-y-8">
-            <div className="bg-white p-4 rounded-lg shadow">
-                <h2 className="text-2xl font-bold mb-4 text-right">יומן טיפולים</h2>
-                <div className="flex justify-center">
-                    <Calendar
-                        onChange={handleDateClick}
-                        tileContent={tileContent}
-                        locale="he-IL"
-                        className="rtl"
-                    />
-                </div>
+        <div className="p-6">
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-2xl font-bold">יומן טיפולים</h1>
+            </div>
+
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+                <table className="min-w-full">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">מספר רכב</th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">פלוגה</th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">תאריך טיפול הבא</th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">ימים עד לטיפול</th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">סטטוס</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                        {vehicles.map((vehicle) => {
+                            const status = getMaintenanceStatus(vehicle);
+                            return (
+                                <tr key={vehicle.id}>
+                                    <td className="px-6 py-4 whitespace-nowrap text-right">{vehicle.vehicleNumber}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-right">{getPlatoonName(vehicle.platoonId)}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-right">{getNextMaintenanceDate(vehicle)}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-right">{getDaysUntilMaintenance(vehicle)}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                            status.color === 'red' ? 'bg-red-100 text-red-800' :
+                                            status.color === 'yellow' ? 'bg-yellow-100 text-yellow-800' :
+                                            status.color === 'green' ? 'bg-green-100 text-green-800' :
+                                            'bg-gray-100 text-gray-800'
+                                        }`}>
+                                            {status.text}
+                                        </span>
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
             </div>
         </div>
     );
