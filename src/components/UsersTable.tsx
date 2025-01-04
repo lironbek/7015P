@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { User } from '../types/user';
 import { Platoon } from '../types/platoon';
 import { Plus, Edit, Trash2 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 interface UsersTableProps {
     users: User[];
@@ -23,11 +24,14 @@ const UsersTable: React.FC<UsersTableProps> = ({ users, platoons, onAdd, onEdit,
         role: 'user',
         platoonId: ''
     });
+    const [error, setError] = useState<string>('');
+    const [loading, setLoading] = useState(false);
 
     const handleOpenModal = (user?: User) => {
+        setError('');
         if (user) {
             setEditingUser(user);
-            setFormData({ ...user });
+            setFormData({ ...user, password: '' });
         } else {
             setEditingUser(null);
             setFormData({
@@ -55,16 +59,69 @@ const UsersTable: React.FC<UsersTableProps> = ({ users, platoons, onAdd, onEdit,
             role: 'user',
             platoonId: ''
         });
+        setError('');
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (editingUser) {
-            onEdit({ ...editingUser, ...formData } as User);
-        } else {
-            onAdd({ ...formData, id: Date.now().toString() } as User);
+        setError('');
+        setLoading(true);
+
+        try {
+            if (editingUser) {
+                const { error: updateError } = await supabase
+                    .from('users')
+                    .update({
+                        first_name: formData.firstName,
+                        last_name: formData.lastName,
+                        phone: formData.phone,
+                        role: formData.role,
+                        platoon_id: formData.platoonId
+                    })
+                    .eq('id', editingUser.id);
+
+                if (updateError) throw updateError;
+                onEdit({ ...editingUser, ...formData } as User);
+            } else {
+                const { data: authData, error: authError } = await supabase.auth.signUp({
+                    email: formData.email!,
+                    password: formData.password!,
+                    options: {
+                        data: {
+                            first_name: formData.firstName,
+                            last_name: formData.lastName
+                        }
+                    }
+                });
+
+                if (authError) throw authError;
+
+                if (authData.user) {
+                    const { error: profileError } = await supabase
+                        .from('users')
+                        .insert([
+                            {
+                                id: authData.user.id,
+                                first_name: formData.firstName,
+                                last_name: formData.lastName,
+                                email: formData.email,
+                                phone: formData.phone,
+                                role: formData.role,
+                                platoon_id: formData.platoonId
+                            }
+                        ]);
+
+                    if (profileError) throw profileError;
+                    onAdd({ ...formData, id: authData.user.id } as User);
+                }
+            }
+
+            handleCloseModal();
+        } catch (err: Error | unknown) {
+            setError(err instanceof Error ? err.message : 'אירעה שגיאה בעת שמירת המשתמש');
+        } finally {
+            setLoading(false);
         }
-        handleCloseModal();
     };
 
     const getPlatoonName = (platoonId?: string) => {
@@ -136,6 +193,11 @@ const UsersTable: React.FC<UsersTableProps> = ({ users, platoons, onAdd, onEdit,
                         <h2 className="text-xl font-bold mb-4 text-right">
                             {editingUser ? 'עריכת משתמש' : 'הוספת משתמש חדש'}
                         </h2>
+                        {error && (
+                            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 text-right">
+                                {error}
+                            </div>
+                        )}
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 text-right">שם פרטי</label>
@@ -217,14 +279,16 @@ const UsersTable: React.FC<UsersTableProps> = ({ users, platoons, onAdd, onEdit,
                                     type="button"
                                     onClick={handleCloseModal}
                                     className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+                                    disabled={loading}
                                 >
                                     ביטול
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md"
+                                    className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md disabled:opacity-50"
+                                    disabled={loading}
                                 >
-                                    {editingUser ? 'שמור שינויים' : 'הוסף משתמש'}
+                                    {loading ? 'שומר...' : editingUser ? 'שמור שינויים' : 'הוסף משתמש'}
                                 </button>
                             </div>
                         </form>

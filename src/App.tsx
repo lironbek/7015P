@@ -48,6 +48,9 @@ function App() {
         // בדיקת סשן קיים
         supabase.auth.getSession().then(({ data: { session } }) => {
             setSession(session);
+            if (session) {
+                loadUsers();
+            }
         });
 
         // האזנה לשינויים במצב ההתחברות
@@ -55,10 +58,39 @@ function App() {
             data: { subscription },
         } = supabase.auth.onAuthStateChange((_event, session) => {
             setSession(session);
+            if (session) {
+                loadUsers();
+            }
         });
 
         return () => subscription.unsubscribe();
     }, []);
+
+    const loadUsers = async () => {
+        try {
+            const { data: usersData, error } = await supabase
+                .from('users')
+                .select('*');
+
+            if (error) {
+                console.error('Error loading users:', error);
+                return;
+            }
+
+            setUsers(usersData.map(user => ({
+                id: user.id,
+                firstName: user.first_name,
+                lastName: user.last_name,
+                email: user.email,
+                phone: user.phone,
+                role: user.role,
+                platoonId: user.platoon_id,
+                password: '' // לא שומרים סיסמאות בזיכרון
+            })));
+        } catch (err) {
+            console.error('Error loading users:', err);
+        }
+    };
 
     useEffect(() => {
         localStorage.setItem('notificationSettings', JSON.stringify(settings));
@@ -72,16 +104,34 @@ function App() {
         setSettings(newSettings);
     };
 
-    const handleAddUser = (user: User) => {
-        setUsers([...users, user]);
+    const handleAddUser = async (_user: User) => {
+        try {
+            await loadUsers(); // טוען מחדש את רשימת המשתמשים
+        } catch (err) {
+            console.error('Error reloading users:', err);
+        }
     };
 
-    const handleEditUser = (user: User) => {
-        setUsers(users.map(u => u.id === user.id ? user : u));
+    const handleEditUser = async (_user: User) => {
+        try {
+            await loadUsers(); // טוען מחדש את רשימת המשתמשים
+        } catch (err) {
+            console.error('Error reloading users:', err);
+        }
     };
 
-    const handleDeleteUser = (userId: string) => {
-        setUsers(users.filter(u => u.id !== userId));
+    const handleDeleteUser = async (userId: string) => {
+        try {
+            const { error } = await supabase
+                .from('users')
+                .delete()
+                .eq('id', userId);
+
+            if (error) throw error;
+            setUsers(users.filter(u => u.id !== userId));
+        } catch (err) {
+            console.error('Error deleting user:', err);
+        }
     };
 
     const handleAddPlatoon = (platoon: Platoon) => {
