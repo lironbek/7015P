@@ -104,7 +104,7 @@ function App() {
         setSettings(newSettings);
     };
 
-    const handleAddUser = async (_user: User) => {
+    const handleAddUser = async () => {
         try {
             await loadUsers(); // טוען מחדש את רשימת המשתמשים
         } catch (err) {
@@ -112,7 +112,7 @@ function App() {
         }
     };
 
-    const handleEditUser = async (_user: User) => {
+    const handleEditUser = async () => {
         try {
             await loadUsers(); // טוען מחדש את רשימת המשתמשים
         } catch (err) {
@@ -175,7 +175,7 @@ function App() {
     };
 
     return (
-        <Router basename="/7015P">
+        <Router basename="">
             <div className="App min-h-screen bg-gray-100">
                 {!session ? (
                     <Login onLogin={handleLogin} />
@@ -185,8 +185,9 @@ function App() {
                         <main className="mr-64 min-h-screen p-8 bg-gray-50">
                             <div className="max-w-7xl mx-auto">
                                 <Routes>
-                                    <Route path="/dashboard" element={<Dashboard session={session} />} />
-                                    <Route path="/users" element={
+                                    <Route path="/" element={<Navigate to="dashboard" replace />} />
+                                    <Route path="dashboard" element={<Dashboard session={session} />} />
+                                    <Route path="users" element={
                                         <UsersTable 
                                             users={users} 
                                             platoons={platoons} 
@@ -195,7 +196,7 @@ function App() {
                                             onDelete={handleDeleteUser} 
                                         />
                                     } />
-                                    <Route path="/platoons" element={
+                                    <Route path="platoons" element={
                                         <PlatoonTable 
                                             platoons={platoons} 
                                             onAdd={handleAddPlatoon} 
@@ -203,7 +204,7 @@ function App() {
                                             onDelete={handleDeletePlatoon} 
                                         />
                                     } />
-                                    <Route path="/vehicles" element={
+                                    <Route path="vehicles" element={
                                         <VehiclesTable 
                                             vehicles={vehicles} 
                                             platoons={platoons} 
@@ -215,7 +216,7 @@ function App() {
                                             onViewLogs={handleViewLogs}
                                         />
                                     } />
-                                    <Route path="/vehicle-types" element={
+                                    <Route path="vehicle-types" element={
                                         <VehicleTypesTable 
                                             vehicleTypes={vehicleTypes}
                                             onAdd={handleAddVehicleType}
@@ -223,14 +224,14 @@ function App() {
                                             onDelete={handleDeleteVehicleType}
                                         />
                                     } />
-                                    <Route path="/maintenance-calendar" element={
+                                    <Route path="maintenance-calendar" element={
                                         <MaintenanceCalendar 
                                             vehicles={vehicles}
                                             platoons={platoons}
                                         />
                                     } />
-                                    <Route path="/settings" element={<Settings settings={settings} onSave={handleSaveSettings} />} />
-                                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                                    <Route path="settings" element={<Settings settings={settings} onSave={handleSaveSettings} />} />
+                                    <Route path="*" element={<Navigate to="dashboard" replace />} />
                                 </Routes>
                             </div>
                         </main>

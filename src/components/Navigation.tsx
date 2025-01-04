@@ -64,13 +64,13 @@ const Navigation: React.FC<NavigationProps> = ({ session }) => {
     };
 
     const menuItems = [
-        { path: '/dashboard', label: 'דשבורד', icon: LayoutDashboard, roles: ['user', 'admin'] },
-        { path: '/users', label: 'ניהול משתמשים', icon: Users, roles: ['admin'] },
-        { path: '/platoons', label: 'ניהול פלוגות', icon: Building2, roles: ['admin'] },
-        { path: '/vehicles', label: 'ניהול רכבים', icon: Car, roles: ['admin'] },
-        { path: '/vehicle-types', label: 'ניהול סוגי רכב', icon: Wrench, roles: ['admin'] },
-        { path: '/maintenance-calendar', label: 'יומן טיפולים', icon: Calendar, roles: ['user', 'admin'] },
-        { path: '/settings', label: 'הגדרות מערכת', icon: Settings, roles: ['user', 'admin'] }
+        { path: 'dashboard', label: 'דשבורד', icon: LayoutDashboard, roles: ['user', 'admin'] },
+        { path: 'users', label: 'ניהול משתמשים', icon: Users, roles: ['admin'] },
+        { path: 'platoons', label: 'ניהול פלוגות', icon: Building2, roles: ['admin'] },
+        { path: 'vehicles', label: 'ניהול רכבים', icon: Car, roles: ['admin'] },
+        { path: 'vehicle-types', label: 'ניהול סוגי רכב', icon: Wrench, roles: ['admin'] },
+        { path: 'maintenance-calendar', label: 'יומן טיפולים', icon: Calendar, roles: ['user', 'admin'] },
+        { path: 'settings', label: 'הגדרות מערכת', icon: Settings, roles: ['user', 'admin'] }
     ];
 
     const filteredMenuItems = menuItems.filter(item => item.roles.includes(userRole));
