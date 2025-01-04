@@ -185,7 +185,7 @@ function App() {
                         <main className="mr-64 min-h-screen p-8 bg-gray-50">
                             <div className="max-w-7xl mx-auto">
                                 <Routes>
-                                    <Route path="/" element={<Navigate to="dashboard" replace />} />
+                                    <Route path="" element={<Navigate to="dashboard" replace />} />
                                     <Route path="dashboard" element={<Dashboard session={session} />} />
                                     <Route path="users" element={
                                         <UsersTable 
