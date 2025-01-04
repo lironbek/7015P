@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import Settings from './components/Settings';
 import Navigation from './components/Navigation';
@@ -10,7 +9,6 @@ import VehiclesTable from './components/VehiclesTable';
 import VehicleTypesTable from './components/VehicleTypesTable';
 import MaintenanceCalendar from './components/MaintenanceCalendar';
 import { supabase } from './lib/supabase';
-import { Session } from '@supabase/supabase-js';
 import { NotificationSettings } from './types/settings';
 import { User } from './types/user';
 import { Vehicle } from './types/vehicle';
@@ -18,7 +16,6 @@ import { Platoon } from './types/platoon';
 import { VehicleType } from './types/vehicleType';
 
 function App() {
-    const [session, setSession] = useState<Session | null>(null);
     const [users, setUsers] = useState<User[]>([]);
     const [platoons, setPlatoons] = useState<Platoon[]>([]);
     const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -40,28 +37,12 @@ function App() {
         email: '',
         password: '',
         phone: '',
-        role: 'user',
+        role: 'admin',
         platoonId: ''
     };
 
     useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session);
-            if (session) {
-                loadUsers();
-            }
-        });
-
-        const {
-            data: { subscription },
-        } = supabase.auth.onAuthStateChange((_event, session) => {
-            setSession(session);
-            if (session) {
-                loadUsers();
-            }
-        });
-
-        return () => subscription.unsubscribe();
+        loadUsers();
     }, []);
 
     const loadUsers = async () => {
@@ -93,10 +74,6 @@ function App() {
     useEffect(() => {
         localStorage.setItem('notificationSettings', JSON.stringify(settings));
     }, [settings]);
-
-    const handleLogin = (newSession: Session) => {
-        setSession(newSession);
-    };
 
     const handleSaveSettings = (newSettings: NotificationSettings) => {
         setSettings(newSettings);
@@ -175,66 +152,62 @@ function App() {
     return (
         <Router>
             <div className="App min-h-screen bg-gray-100">
-                {!session ? (
-                    <Login onLogin={handleLogin} />
-                ) : (
-                    <div className="min-h-screen bg-gray-100" style={{ direction: 'rtl' }}>
-                        <Navigation session={session} />
-                        <main className="mr-64 min-h-screen p-8 bg-gray-50">
-                            <div className="max-w-7xl mx-auto">
-                                <Routes>
-                                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                                    <Route path="/dashboard" element={<Dashboard session={session} />} />
-                                    <Route path="/users" element={
-                                        <UsersTable 
-                                            users={users} 
-                                            platoons={platoons} 
-                                            onAdd={handleAddUser} 
-                                            onEdit={handleEditUser} 
-                                            onDelete={handleDeleteUser} 
-                                        />
-                                    } />
-                                    <Route path="/platoons" element={
-                                        <PlatoonTable 
-                                            platoons={platoons} 
-                                            onAdd={handleAddPlatoon} 
-                                            onEdit={handleEditPlatoon} 
-                                            onDelete={handleDeletePlatoon} 
-                                        />
-                                    } />
-                                    <Route path="/vehicles" element={
-                                        <VehiclesTable 
-                                            vehicles={vehicles} 
-                                            platoons={platoons} 
-                                            vehicleTypes={vehicleTypes} 
-                                            currentUser={defaultUser}
-                                            onAdd={handleAddVehicle} 
-                                            onEdit={handleEditVehicle} 
-                                            onDelete={handleDeleteVehicle} 
-                                            onViewLogs={handleViewLogs}
-                                        />
-                                    } />
-                                    <Route path="/vehicle-types" element={
-                                        <VehicleTypesTable 
-                                            vehicleTypes={vehicleTypes}
-                                            onAdd={handleAddVehicleType}
-                                            onEdit={handleEditVehicleType}
-                                            onDelete={handleDeleteVehicleType}
-                                        />
-                                    } />
-                                    <Route path="/maintenance-calendar" element={
-                                        <MaintenanceCalendar 
-                                            vehicles={vehicles}
-                                            platoons={platoons}
-                                        />
-                                    } />
-                                    <Route path="/settings" element={<Settings settings={settings} onSave={handleSaveSettings} />} />
-                                    <Route path="*" element={<Navigate to="/dashboard" replace />} />
-                                </Routes>
-                            </div>
-                        </main>
-                    </div>
-                )}
+                <div className="min-h-screen bg-gray-100" style={{ direction: 'rtl' }}>
+                    <Navigation />
+                    <main className="mr-64 min-h-screen p-8 bg-gray-50">
+                        <div className="max-w-7xl mx-auto">
+                            <Routes>
+                                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                                <Route path="/dashboard" element={<Dashboard />} />
+                                <Route path="/users" element={
+                                    <UsersTable 
+                                        users={users} 
+                                        platoons={platoons} 
+                                        onAdd={handleAddUser} 
+                                        onEdit={handleEditUser} 
+                                        onDelete={handleDeleteUser} 
+                                    />
+                                } />
+                                <Route path="/platoons" element={
+                                    <PlatoonTable 
+                                        platoons={platoons} 
+                                        onAdd={handleAddPlatoon} 
+                                        onEdit={handleEditPlatoon} 
+                                        onDelete={handleDeletePlatoon} 
+                                    />
+                                } />
+                                <Route path="/vehicles" element={
+                                    <VehiclesTable 
+                                        vehicles={vehicles} 
+                                        platoons={platoons} 
+                                        vehicleTypes={vehicleTypes} 
+                                        currentUser={defaultUser}
+                                        onAdd={handleAddVehicle} 
+                                        onEdit={handleEditVehicle} 
+                                        onDelete={handleDeleteVehicle} 
+                                        onViewLogs={handleViewLogs}
+                                    />
+                                } />
+                                <Route path="/vehicle-types" element={
+                                    <VehicleTypesTable 
+                                        vehicleTypes={vehicleTypes}
+                                        onAdd={handleAddVehicleType}
+                                        onEdit={handleEditVehicleType}
+                                        onDelete={handleDeleteVehicleType}
+                                    />
+                                } />
+                                <Route path="/maintenance-calendar" element={
+                                    <MaintenanceCalendar 
+                                        vehicles={vehicles}
+                                        platoons={platoons}
+                                    />
+                                } />
+                                <Route path="/settings" element={<Settings settings={settings} onSave={handleSaveSettings} />} />
+                                <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                            </Routes>
+                        </div>
+                    </main>
+                </div>
             </div>
         </Router>
     );
