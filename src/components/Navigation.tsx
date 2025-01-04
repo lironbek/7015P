@@ -79,13 +79,13 @@ const Navigation: React.FC<NavigationProps> = ({ session }) => {
     };
 
     const menuItems = [
-        { path: 'dashboard', label: 'דשבורד', icon: LayoutDashboard, roles: ['user', 'admin'] },
-        { path: 'users', label: 'ניהול משתמשים', icon: Users, roles: ['admin'] },
-        { path: 'platoons', label: 'ניהול פלוגות', icon: Building2, roles: ['admin'] },
-        { path: 'vehicles', label: 'ניהול רכבים', icon: Car, roles: ['admin'] },
-        { path: 'vehicle-types', label: 'ניהול סוגי רכב', icon: Wrench, roles: ['admin'] },
-        { path: 'maintenance-calendar', label: 'יומן טיפולים', icon: Calendar, roles: ['user', 'admin'] },
-        { path: 'settings', label: 'הגדרות מערכת', icon: Settings, roles: ['user', 'admin'] }
+        { path: '/dashboard', label: 'דשבורד', icon: LayoutDashboard, roles: ['user', 'admin'] },
+        { path: '/users', label: 'ניהול משתמשים', icon: Users, roles: ['admin'] },
+        { path: '/platoons', label: 'ניהול פלוגות', icon: Building2, roles: ['admin'] },
+        { path: '/vehicles', label: 'ניהול רכבים', icon: Car, roles: ['admin'] },
+        { path: '/vehicle-types', label: 'ניהול סוגי רכב', icon: Wrench, roles: ['admin'] },
+        { path: '/maintenance-calendar', label: 'יומן טיפולים', icon: Calendar, roles: ['user', 'admin'] },
+        { path: '/settings', label: 'הגדרות מערכת', icon: Settings, roles: ['user', 'admin'] }
     ];
 
     if (isLoading) {
@@ -120,7 +120,7 @@ const Navigation: React.FC<NavigationProps> = ({ session }) => {
                                     <Link
                                         to={item.path}
                                         className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors duration-200 ${
-                                            location.pathname.replace('/', '') === item.path
+                                            location.pathname === item.path
                                                 ? 'bg-indigo-600 text-white'
                                                 : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                                         }`}
