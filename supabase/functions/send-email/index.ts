@@ -1,54 +1,57 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { SmtpClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts";
+interface RequestBody {
+    to: string;
+    subject: string;
+    message: string;
+}
 
-const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+interface ResponseData {
+    message: string;
+    error?: string;
+}
 
-serve(async (req) => {
+export default async function handler(
+    req: { method: string; body: RequestBody },
+    res: { 
+        setHeader: (name: string, value: string) => void;
+        status: (code: number) => { json: (data: ResponseData) => void };
+    }
+) {
     if (req.method === 'OPTIONS') {
-        return new Response('ok', { headers: corsHeaders });
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Headers', 'authorization, x-client-info, apikey, content-type');
+        res.status(200).json({ message: 'ok' });
+        return;
     }
 
     try {
-        const { to, subject, message } = await req.json();
+        const { to, subject, message } = req.body;
 
-        // Initialize SMTP client
-        const client = new SmtpClient();
-        await client.connectTLS({
-            hostname: Deno.env.get('SMTP_HOSTNAME') || '',
-            port: parseInt(Deno.env.get('SMTP_PORT') || '587'),
-            username: Deno.env.get('SMTP_USERNAME') || '',
-            password: Deno.env.get('SMTP_PASSWORD') || '',
-        });
-
-        // Send email
-        await client.send({
-            from: Deno.env.get('SMTP_FROM') || '',
-            to: to,
-            subject: subject,
-            content: message,
-            html: `<div dir="rtl">${message}</div>`,
-        });
-
-        await client.close();
-
-        return new Response(
-            JSON.stringify({ message: 'Email sent successfully' }),
-            {
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                status: 200,
+        // Send email using Resend API
+        const response = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+                'Content-Type': 'application/json'
             },
-        );
+            body: JSON.stringify({
+                from: process.env.EMAIL_FROM,
+                to: to,
+                subject: subject,
+                text: message,
+                html: `<div dir="rtl">${message}</div>`
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to send email');
+        }
+
+        res.status(200).json({ message: 'Email sent successfully' });
     } catch (error) {
-        return new Response(
-            JSON.stringify({ error: error.message }),
-            {
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                status: 400,
-            },
-        );
+        if (error instanceof Error) {
+            res.status(400).json({ message: 'Error', error: error.message });
+        } else {
+            res.status(400).json({ message: 'Error', error: 'An unknown error occurred' });
+        }
     }
-}); 
+} 

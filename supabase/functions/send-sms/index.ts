@@ -1,58 +1,54 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+interface RequestBody {
+    to: string;
+    message: string;
+}
 
-const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+interface ResponseData {
+    message: string;
+    error?: string;
+}
 
-serve(async (req) => {
+export default async function handler(
+    req: { method: string; body: RequestBody },
+    res: { 
+        setHeader: (name: string, value: string) => void;
+        status: (code: number) => { json: (data: ResponseData) => void };
+    }
+) {
     if (req.method === 'OPTIONS') {
-        return new Response('ok', { headers: corsHeaders });
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Headers', 'authorization, x-client-info, apikey, content-type');
+        res.status(200).json({ message: 'ok' });
+        return;
     }
 
     try {
-        const { to, message } = await req.json();
+        const { to, message } = req.body;
 
-        const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
-        const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-        const fromNumber = Deno.env.get('TWILIO_FROM_NUMBER');
-
-        const response = await fetch(
-            `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
-            {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Basic ${btoa(`${accountSid}:${authToken}`)}`,
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams({
-                    To: to,
-                    From: fromNumber || '',
-                    Body: message,
-                }).toString(),
-            }
-        );
-
-        const data = await response.json();
+        // Send SMS using Twilio API
+        const response = await fetch('https://api.twilio.com/2010-04-01/Accounts/' + process.env.TWILIO_ACCOUNT_SID + '/Messages.json', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Basic ' + Buffer.from(process.env.TWILIO_ACCOUNT_SID + ':' + process.env.TWILIO_AUTH_TOKEN).toString('base64'),
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams({
+                To: to,
+                From: process.env.TWILIO_PHONE_NUMBER || '',
+                Body: message
+            }).toString()
+        });
 
         if (!response.ok) {
-            throw new Error(data.message || 'Failed to send SMS');
+            throw new Error('Failed to send SMS');
         }
 
-        return new Response(
-            JSON.stringify({ message: 'SMS sent successfully', data }),
-            {
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                status: 200,
-            },
-        );
+        res.status(200).json({ message: 'SMS sent successfully' });
     } catch (error) {
-        return new Response(
-            JSON.stringify({ error: error.message }),
-            {
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                status: 400,
-            },
-        );
+        if (error instanceof Error) {
+            res.status(400).json({ message: 'Error', error: error.message });
+        } else {
+            res.status(400).json({ message: 'Error', error: 'An unknown error occurred' });
+        }
     }
-}); 
+} 

@@ -1,3 +1,5 @@
+export type UserRole = 'admin' | 'user';
+
 export interface User {
     id: string;
     firstName: string;
@@ -5,7 +7,7 @@ export interface User {
     email: string;
     password: string;
     phone: string;
-    role: 'admin' | 'user';
+    role: UserRole;
     platoonId?: string;
 }
 
