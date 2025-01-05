@@ -237,70 +237,74 @@ function App() {
         // Implement view logs functionality
     };
 
-    if (!session) {
-        return <Login />;
-    }
-
     return (
         <Router>
-            <div className="App min-h-screen bg-gray-100">
-                <div className="min-h-screen bg-gray-100" style={{ direction: 'rtl' }}>
-                    <Navigation />
-                    <main className="mr-64 min-h-screen p-8 bg-gray-50">
-                        <div className="max-w-7xl mx-auto">
-                            <Routes>
-                                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                                <Route path="/dashboard" element={<Dashboard />} />
-                                <Route path="/users" element={
-                                    <UsersTable 
-                                        users={users} 
-                                        platoons={platoons} 
-                                        onAdd={handleAddUser} 
-                                        onEdit={handleEditUser} 
-                                        onDelete={handleDeleteUser} 
-                                    />
-                                } />
-                                <Route path="/platoons" element={
-                                    <PlatoonTable 
-                                        platoons={platoons} 
-                                        onAdd={handleAddPlatoon} 
-                                        onEdit={handleEditPlatoon} 
-                                        onDelete={handleDeletePlatoon} 
-                                    />
-                                } />
-                                <Route path="/vehicles" element={
-                                    <VehiclesTable 
-                                        vehicles={vehicles} 
-                                        platoons={platoons} 
-                                        vehicleTypes={vehicleTypes} 
-                                        currentUser={defaultUser}
-                                        onAdd={handleAddVehicle} 
-                                        onEdit={handleEditVehicle} 
-                                        onDelete={handleDeleteVehicle} 
-                                        onViewLogs={handleViewLogs}
-                                    />
-                                } />
-                                <Route path="/vehicle-types" element={
-                                    <VehicleTypesTable 
-                                        vehicleTypes={vehicleTypes}
-                                        onAdd={handleAddVehicleType}
-                                        onEdit={handleEditVehicleType}
-                                        onDelete={handleDeleteVehicleType}
-                                    />
-                                } />
-                                <Route path="/maintenance-calendar" element={
-                                    <MaintenanceCalendar 
-                                        vehicles={vehicles}
-                                        platoons={platoons}
-                                    />
-                                } />
-                                <Route path="/settings" element={<Settings settings={settings} onSave={handleSaveSettings} />} />
-                                <Route path="*" element={<Navigate to="/dashboard" replace />} />
-                            </Routes>
-                        </div>
-                    </main>
+            {!session ? (
+                <Login />
+            ) : (
+                <div className="App min-h-screen bg-gray-100">
+                    <div className="min-h-screen bg-gray-100" style={{ direction: 'rtl' }}>
+                        <Navigation />
+                        <main className="mr-64 min-h-screen p-8 bg-gray-50">
+                            <div className="max-w-7xl mx-auto">
+                                <Routes>
+                                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                                    <Route path="/dashboard" element={<Dashboard />} />
+                                    <Route path="/users" element={
+                                        <UsersTable
+                                            users={users}
+                                            platoons={platoons}
+                                            onAdd={handleAddUser}
+                                            onEdit={handleEditUser}
+                                            onDelete={handleDeleteUser}
+                                        />
+                                    } />
+                                    <Route path="/platoons" element={
+                                        <PlatoonTable
+                                            platoons={platoons}
+                                            onAdd={handleAddPlatoon}
+                                            onEdit={handleEditPlatoon}
+                                            onDelete={handleDeletePlatoon}
+                                        />
+                                    } />
+                                    <Route path="/vehicles" element={
+                                        <VehiclesTable
+                                            vehicles={vehicles}
+                                            vehicleTypes={vehicleTypes}
+                                            platoons={platoons}
+                                            onAdd={handleAddVehicle}
+                                            onEdit={handleEditVehicle}
+                                            onDelete={handleDeleteVehicle}
+                                            onViewLogs={handleViewLogs}
+                                            currentUser={defaultUser}
+                                        />
+                                    } />
+                                    <Route path="/vehicle-types" element={
+                                        <VehicleTypesTable
+                                            vehicleTypes={vehicleTypes}
+                                            onAdd={handleAddVehicleType}
+                                            onEdit={handleEditVehicleType}
+                                            onDelete={handleDeleteVehicleType}
+                                        />
+                                    } />
+                                    <Route path="/maintenance" element={
+                                        <MaintenanceCalendar
+                                            vehicles={vehicles}
+                                            platoons={platoons}
+                                        />
+                                    } />
+                                    <Route path="/settings" element={
+                                        <Settings
+                                            settings={settings}
+                                            onSave={handleSaveSettings}
+                                        />
+                                    } />
+                                </Routes>
+                            </div>
+                        </main>
+                    </div>
                 </div>
-            </div>
+            )}
         </Router>
     );
 }

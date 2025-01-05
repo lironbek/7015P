@@ -29,23 +29,18 @@ export const checkAuth = async () => {
 // פונקציית בדיקת חיבור
 export const testConnection = async () => {
     try {
-        const session = await checkAuth();
-        if (!session) {
-            console.error('No active session');
-            return false;
-        }
-
+        // Simple connection test without requiring authentication
         const { error } = await supabase
             .from('platoons')
             .select('count')
-            .limit(1);
+            .limit(1)
+            .maybeSingle();
 
-        if (error) {
+        if (error && error.message !== 'JWT token is missing') {
             console.error('Connection test error:', error);
             return false;
         }
 
-        console.log('Connection test successful');
         return true;
     } catch (err) {
         console.error('Connection test exception:', err);
