@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Platoon } from '../types/platoon';
 import { Plus, Edit, Trash2 } from 'lucide-react';
+import { addPlatoon } from '../lib/supabase';
 
 interface PlatoonTableProps {
     platoons: Platoon[];
@@ -40,14 +41,23 @@ const PlatoonTable: React.FC<PlatoonTableProps> = ({ platoons, onAdd, onEdit, on
         });
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (editingPlatoon) {
-            onEdit({ ...editingPlatoon, ...formData } as Platoon);
-        } else {
-            onAdd({ ...formData, id: Date.now().toString() } as Platoon);
+        try {
+            if (editingPlatoon) {
+                onEdit({ ...editingPlatoon, ...formData } as Platoon);
+            } else {
+                if (!formData.name) return;
+                const newPlatoon = await addPlatoon({
+                    name: formData.name,
+                    description: formData.description || ''
+                });
+                onAdd(newPlatoon);
+            }
+            handleCloseModal();
+        } catch (error) {
+            console.error('Error saving platoon:', error);
         }
-        handleCloseModal();
     };
 
     return (

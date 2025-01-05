@@ -1,75 +1,248 @@
 import { createClient } from '@supabase/supabase-js';
+import { Platoon } from '../types/platoon';
+import { Vehicle } from '../types/vehicle';
+import { VehicleType } from '../types/vehicleType';
 
-const supabaseUrl = 'https://yjuimyhhhqojbzdayvnw.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlqdWlteWhoaHFvamJ6ZGF5dm53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzYwMDgwMDgsImV4cCI6MjA1MTU4NDAwOH0.nGCEH_B3YZKZ_EgScFmBxp0UCymYbMnRpOo97v7pCnU';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
-
-export const updateUserRole = async (email: string, role: 'admin' | 'user') => {
-    try {
-        // קודם נמצא את המשתמש לפי האימייל
-        const { data: userData, error: userError } = await supabase
-            .from('users')
-            .select('id')
-            .eq('email', email)
-            .single();
-
-        if (userError) {
-            console.error('Error finding user:', userError);
-            return { error: userError };
-        }
-
-        if (!userData) {
-            // אם המשתמש לא נמצא, ניצור אותו
-            const { data: { user: authUser }, error: authError } = await supabase.auth.signUp({
-                email,
-                password: Math.random().toString(36).slice(-8), // סיסמה רנדומלית
-                options: {
-                    data: {
-                        role: role
-                    }
-                }
-            });
-            
-            if (authError) {
-                console.error('Error creating auth user:', authError);
-                return { error: authError };
-            }
-
-            if (authUser) {
-                const { error: insertError } = await supabase
-                    .from('users')
-                    .insert([
-                        {
-                            id: authUser.id,
-                            email: email,
-                            role: role,
-                            first_name: '',
-                            last_name: ''
-                        }
-                    ]);
-
-                if (insertError) {
-                    console.error('Error creating user:', insertError);
-                    return { error: insertError };
-                }
-            }
-        } else {
-            // אם המשתמש נמצא, נעדכן את התפקיד שלו
-            const { error: updateError } = await supabase
-                .from('users')
-                .update({ role: role })
-                .eq('id', userData.id);
-
-            if (updateError) {
-                console.error('Error updating user role:', updateError);
-                return { error: updateError };
-            }
-        }
-
-        return { success: true };
-    } catch (err) {
-        console.error('Error:', err);
-        return { error: err };
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+    auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
     }
+});
+
+// פונקציה לבדיקת מצב האימות
+export const checkAuth = async () => {
+    try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        return session;
+    } catch (error) {
+        console.error('Error checking auth status:', error);
+        return null;
+    }
+};
+
+// פונקציית בדיקת חיבור
+export const testConnection = async () => {
+    try {
+        const session = await checkAuth();
+        if (!session) {
+            console.error('No active session');
+            return false;
+        }
+
+        const { error } = await supabase
+            .from('platoons')
+            .select('count')
+            .limit(1);
+
+        if (error) {
+            console.error('Connection test error:', error);
+            return false;
+        }
+
+        console.log('Connection test successful');
+        return true;
+    } catch (err) {
+        console.error('Connection test exception:', err);
+        return false;
+    }
+};
+
+// פונקציות לטיפול בפלוגות
+export const addPlatoon = async (platoon: Omit<Platoon, 'id' | 'created_at'>) => {
+    const session = await checkAuth();
+    if (!session) {
+        throw new Error('No active session');
+    }
+
+    const { data, error } = await supabase
+        .from('platoons')
+        .insert([platoon])
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error adding platoon:', error);
+        throw error;
+    }
+
+    return data;
+};
+
+export const updatePlatoon = async (platoon: Platoon) => {
+    const session = await checkAuth();
+    if (!session) {
+        throw new Error('No active session');
+    }
+
+    const { data, error } = await supabase
+        .from('platoons')
+        .update(platoon)
+        .eq('id', platoon.id)
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error updating platoon:', error);
+        throw error;
+    }
+
+    return data;
+};
+
+export const deletePlatoon = async (platoonId: string) => {
+    const session = await checkAuth();
+    if (!session) {
+        throw new Error('No active session');
+    }
+
+    const { error } = await supabase
+        .from('platoons')
+        .delete()
+        .eq('id', platoonId);
+
+    if (error) {
+        console.error('Error deleting platoon:', error);
+        throw error;
+    }
+};
+
+export const getPlatoons = async () => {
+    const session = await checkAuth();
+    if (!session) {
+        throw new Error('No active session');
+    }
+
+    const { data, error } = await supabase
+        .from('platoons')
+        .select('*')
+        .order('name');
+
+    if (error) {
+        console.error('Error fetching platoons:', error);
+        throw error;
+    }
+
+    return data;
+};
+
+// פונקציות לטיפול ברכבים
+export const addVehicle = async (vehicle: Omit<Vehicle, 'id' | 'created_at'>) => {
+    const { data, error } = await supabase
+        .from('vehicles')
+        .insert([vehicle])
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error adding vehicle:', error);
+        throw error;
+    }
+
+    return data;
+};
+
+export const updateVehicle = async (vehicle: Vehicle) => {
+    const { data, error } = await supabase
+        .from('vehicles')
+        .update(vehicle)
+        .eq('id', vehicle.id)
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error updating vehicle:', error);
+        throw error;
+    }
+
+    return data;
+};
+
+export const deleteVehicle = async (vehicleId: string) => {
+    const { error } = await supabase
+        .from('vehicles')
+        .delete()
+        .eq('id', vehicleId);
+
+    if (error) {
+        console.error('Error deleting vehicle:', error);
+        throw error;
+    }
+};
+
+export const getVehicles = async () => {
+    const { data, error } = await supabase
+        .from('vehicles')
+        .select('*')
+        .order('vehicle_number');
+
+    if (error) {
+        console.error('Error fetching vehicles:', error);
+        throw error;
+    }
+
+    return data;
+};
+
+// פונקציות לטיפול בסוגי רכבים
+export const addVehicleType = async (vehicleType: Omit<VehicleType, 'id' | 'created_at'>) => {
+    const { data, error } = await supabase
+        .from('vehicle_types')
+        .insert([vehicleType])
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error adding vehicle type:', error);
+        throw error;
+    }
+
+    return data;
+};
+
+export const updateVehicleType = async (vehicleType: VehicleType) => {
+    const { data, error } = await supabase
+        .from('vehicle_types')
+        .update(vehicleType)
+        .eq('id', vehicleType.id)
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error updating vehicle type:', error);
+        throw error;
+    }
+
+    return data;
+};
+
+export const deleteVehicleType = async (vehicleTypeId: string) => {
+    const { error } = await supabase
+        .from('vehicle_types')
+        .delete()
+        .eq('id', vehicleTypeId);
+
+    if (error) {
+        console.error('Error deleting vehicle type:', error);
+        throw error;
+    }
+};
+
+export const getVehicleTypes = async () => {
+    const { data, error } = await supabase
+        .from('vehicle_types')
+        .select('*')
+        .order('name');
+
+    if (error) {
+        console.error('Error fetching vehicle types:', error);
+        throw error;
+    }
+
+    return data;
 }; 

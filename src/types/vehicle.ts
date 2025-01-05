@@ -3,22 +3,23 @@ export type VehicleClassification = 'operational' | 'administrative';
 
 export interface Vehicle {
     id: string;
-    vehicleNumber: string;
-    vehicleTypeId: string;
-    platoonId: string;
-    maintenanceDate: string;
+    vehicle_number: string;
+    vehicle_type_id: string;
+    platoon_id: string;
+    maintenance_date: string;
     notes?: string;
     status: VehicleStatus;
-    hasFireExtinguisher: boolean;
-    hasDriverTools: boolean;
+    has_fire_extinguisher: boolean;
+    has_driver_tools: boolean;
     classification: VehicleClassification;
+    created_at?: string;
 }
 
 export interface MaintenanceLog {
     id: string;
-    vehicleId: string;
-    userId: string;
-    timestamp: string;
-    notes: string;
-    images?: string[];
+    vehicle_id: string;
+    user_id: string;
+    description: string;
+    date: string;
+    created_at?: string;
 } 

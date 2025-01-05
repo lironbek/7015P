@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Session } from '@supabase/supabase-js';
 import Dashboard from './components/Dashboard';
 import Settings from './components/Settings';
 import Navigation from './components/Navigation';
@@ -8,7 +9,8 @@ import PlatoonTable from './components/PlatoonTable';
 import VehiclesTable from './components/VehiclesTable';
 import VehicleTypesTable from './components/VehicleTypesTable';
 import MaintenanceCalendar from './components/MaintenanceCalendar';
-import { supabase } from './lib/supabase';
+import Login from './components/Login';
+import { supabase, testConnection } from './lib/supabase';
 import { NotificationSettings } from './types/settings';
 import { User } from './types/user';
 import { Vehicle } from './types/vehicle';
@@ -16,6 +18,7 @@ import { Platoon } from './types/platoon';
 import { VehicleType } from './types/vehicleType';
 
 function App() {
+    const [session, setSession] = useState<Session | null>(null);
     const [users, setUsers] = useState<User[]>([]);
     const [platoons, setPlatoons] = useState<Platoon[]>([]);
     const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -42,7 +45,92 @@ function App() {
     };
 
     useEffect(() => {
-        loadUsers();
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            setSession(session);
+        });
+
+        const {
+            data: { subscription },
+        } = supabase.auth.onAuthStateChange((_event, session) => {
+            setSession(session);
+        });
+
+        return () => subscription.unsubscribe();
+    }, []);
+
+    useEffect(() => {
+        if (session) {
+            loadUsers();
+            loadPlatoons();
+            loadVehicles();
+            loadVehicleTypes();
+        }
+    }, [session]);
+
+    const loadPlatoons = async () => {
+        try {
+            const { data: platoonsData, error } = await supabase
+                .from('platoons')
+                .select('*')
+                .order('name');
+
+            if (error) {
+                console.error('Error loading platoons:', error);
+                return;
+            }
+
+            setPlatoons(platoonsData);
+        } catch (err) {
+            console.error('Error loading platoons:', err);
+        }
+    };
+
+    const loadVehicles = async () => {
+        try {
+            const { data: vehiclesData, error } = await supabase
+                .from('vehicles')
+                .select('*')
+                .order('vehicle_number');
+
+            if (error) {
+                console.error('Error loading vehicles:', error);
+                return;
+            }
+
+            setVehicles(vehiclesData);
+        } catch (err) {
+            console.error('Error loading vehicles:', err);
+        }
+    };
+
+    const loadVehicleTypes = async () => {
+        try {
+            const { data: vehicleTypesData, error } = await supabase
+                .from('vehicle_types')
+                .select('*')
+                .order('name');
+
+            if (error) {
+                console.error('Error loading vehicle types:', error);
+                return;
+            }
+
+            setVehicleTypes(vehicleTypesData);
+        } catch (err) {
+            console.error('Error loading vehicle types:', err);
+        }
+    };
+
+    useEffect(() => {
+        const checkConnection = async () => {
+            const isConnected = await testConnection();
+            if (!isConnected) {
+                console.error('Failed to connect to Supabase');
+                // כאן אפשר להוסיף הודעה למשתמש על בעיית התחברות
+            }
+        };
+        
+        checkConnection();
     }, []);
 
     const loadUsers = async () => {
@@ -148,6 +236,10 @@ function App() {
     const handleViewLogs = () => {
         // Implement view logs functionality
     };
+
+    if (!session) {
+        return <Login />;
+    }
 
     return (
         <Router>
